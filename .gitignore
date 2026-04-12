@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+
+# Django
+*.sqlite3
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Environment variables
+*.env
+.env
+
+# IDE
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Accept these files in the repository
+!.gitignore
+!.travis.yml

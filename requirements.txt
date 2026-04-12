@@ -1,0 +1,9 @@
+Django==5.2
+django-allauth==65.4.1
+django-crispy-forms==2.3
+crispy-bootstrap4==2024.10
+django-countries==7.6.1
+stripe==11.6.0
+Pillow>=11.2.0
+PyJWT>=2.12.1
+cryptography>=46.0.7
