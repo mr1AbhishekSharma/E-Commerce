@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Product } from "@/types";
 import { formatMediaUrl } from "@/lib/api";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface ProductCardProps {
   product: Product;
@@ -8,6 +11,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const imageUrl = formatMediaUrl(product.image);
+  const { formatPrice } = useCurrency();
 
   return (
     <div className="group relative bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between">
@@ -74,15 +78,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.discount_price ? (
             <>
               <span className="text-base font-bold text-red-600">
-                ${product.discount_price.toFixed(2)}
+                {formatPrice(product.discount_price)}
               </span>
               <span className="text-xs text-gray-400 line-through">
-                ${product.price.toFixed(2)}
+                {formatPrice(product.price)}
               </span>
             </>
           ) : (
             <span className="text-base font-bold text-gray-900">
-              ${product.price.toFixed(2)}
+              {formatPrice(product.price)}
             </span>
           )}
         </div>

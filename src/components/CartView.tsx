@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { formatMediaUrl } from "@/lib/api";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Tag, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -19,6 +20,8 @@ export default function CartView() {
     updateQuantity,
     applyCoupon,
   } = useCart();
+
+  const { formatPrice } = useCurrency();
 
   const [inputCoupon, setInputCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<{ text: string; error: boolean } | null>(null);
@@ -51,7 +54,7 @@ export default function CartView() {
           Your Shopping Bag is Empty
         </h1>
         <p className="text-gray-500 max-w-md mx-auto mb-8 text-sm">
-          Looks like you haven't added any items yet. Explore our latest arrivals and elevate your wardrobe.
+          Looks like you haven&apos;t added any items yet. Explore our latest arrivals and elevate your wardrobe.
         </p>
         <Link
           href="/shop"
@@ -85,6 +88,7 @@ export default function CartView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* Cart Items List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="divide-y divide-gray-100 border-t border-b border-gray-100">
             {items.map((cartItem) => {
@@ -96,6 +100,7 @@ export default function CartView() {
                 <div key={product.id} className="py-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
                   <div className="flex gap-4 items-center">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 shrink-0 p-2 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={formatMediaUrl(product.image)}
                         alt={product.title}
@@ -116,16 +121,17 @@ export default function CartView() {
                         </p>
                       )}
                       <div className="text-sm font-semibold text-gray-900 pt-0.5">
-                        ${unitPrice.toFixed(2)}
+                        {formatPrice(unitPrice)}
                         {product.discount_price && (
                           <span className="text-xs text-gray-400 line-through ml-2">
-                            ${product.price.toFixed(2)}
+                            {formatPrice(product.price)}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
+                  {/* Quantity & Actions */}
                   <div className="flex items-center justify-between w-full sm:w-auto gap-6">
                     <div className="flex items-center border border-gray-200 rounded-xl bg-gray-50 overflow-hidden">
                       <button
@@ -151,7 +157,7 @@ export default function CartView() {
 
                     <div className="text-right min-w-[70px]">
                       <span className="text-base font-bold text-gray-900">
-                        ${lineTotal.toFixed(2)}
+                        {formatPrice(lineTotal)}
                       </span>
                     </div>
 
@@ -170,10 +176,12 @@ export default function CartView() {
           </div>
         </div>
 
+        {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="bg-gray-50 rounded-3xl p-6 sm:p-8 border border-gray-200/80 space-y-6">
             <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
 
+            {/* Coupon Code Input */}
             <form onSubmit={handleApplyCoupon} className="space-y-2">
               <label htmlFor="coupon" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 Discount Coupon
@@ -219,21 +227,22 @@ export default function CartView() {
               {couponCode && !couponMsg && (
                 <div className="flex items-center justify-between text-xs bg-emerald-50 text-emerald-800 p-2 rounded-lg border border-emerald-200">
                   <span className="font-semibold">Coupon applied: {couponCode}</span>
-                  <span className="font-bold">-${discount.toFixed(2)}</span>
+                  <span className="font-bold">-{formatPrice(discount)}</span>
                 </div>
               )}
             </form>
 
+            {/* Calculations Breakdown */}
             <div className="space-y-3 pt-4 border-t border-gray-200 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span className="font-semibold text-gray-900">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
               </div>
 
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-semibold">
                   <span>Coupon Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>-{formatPrice(discount)}</span>
                 </div>
               )}
 
@@ -244,10 +253,11 @@ export default function CartView() {
 
               <div className="border-t border-gray-200 pt-3 flex justify-between text-lg font-black text-gray-900">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatPrice(total)}</span>
               </div>
             </div>
 
+            {/* Checkout CTA */}
             <Link
               href="/checkout"
               className="w-full bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-neutral-800 transition flex items-center justify-center gap-2 shadow-lg"
