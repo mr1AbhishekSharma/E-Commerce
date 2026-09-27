@@ -42,13 +42,6 @@ export interface OrderItem {
   amount_saved: number;
 }
 
-export interface BillingAddress {
-  street_address: string;
-  apartment_address?: string;
-  country: string;
-  zip: string;
-}
-
 export interface CartOrder {
   id: number;
   ref_code: string;
@@ -56,24 +49,4 @@ export interface CartOrder {
   total: number;
   ordered_date?: string;
   ordered?: boolean;
-  coupon?: {
-    code: string;
-    amount: number;
-  };
-  billing_address?: BillingAddress;
-  being_delivered?: boolean;
-  received?: boolean;
-  refund_requested?: boolean;
-  refund_granted?: boolean;
-}
-
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-}
-
-export interface LocalCartItem {
-  product: Product;
-  quantity: number;
 }

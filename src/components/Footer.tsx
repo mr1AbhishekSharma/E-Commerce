@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
@@ -10,7 +12,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <span className="text-2xl font-black tracking-tight text-white">
-              <span className="text-3xl font-extrabold">T</span>HE VIBE
+              <span className="text-3xl font-extrabold text-indigo-500">T</span>HE VIBE
             </span>
             <p className="text-sm text-neutral-400">
               Modern apparel and lifestyle essentials designed for everyday comfort, quality, and effortless confidence.
@@ -59,32 +61,50 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/shop" className="hover:text-white transition">
-                  Shop All Products
+                  Shop All
                 </Link>
               </li>
               <li>
                 <Link href="/cart" className="hover:text-white transition">
-                  Shopping Cart
+                  Shopping Bag
                 </Link>
               </li>
               <li>
-                <a href="http://127.0.0.1:8000/admin/" target="_blank" className="hover:text-white transition">
-                  Admin Dashboard
+                <Link href="/orders" className="hover:text-white transition">
+                  My Orders
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://www.youtube.com/@user-Abhishek0079"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-red-400 transition text-red-400 font-medium"
+                >
+                  YouTube Channel
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Customer Care */}
+          {/* Customer Service */}
           <div>
             <h4 className="text-white text-sm font-semibold uppercase tracking-wider mb-4">
               Customer Support
             </h4>
             <ul className="space-y-2 text-sm text-neutral-400">
-              <li>Shipping & Delivery</li>
-              <li>Returns & Exchanges</li>
-              <li>Order Tracking</li>
-              <li>Contact Support</li>
+              <li>
+                <Link href="/orders" className="hover:text-white transition">
+                  Order Tracking
+                </Link>
+              </li>
+              <li>
+                <Link href="/refund" className="hover:text-white transition">
+                  Returns & Refunds
+                </Link>
+              </li>
+              <li className="text-neutral-500">Free Express Shipping &gt; $100</li>
+              <li className="text-neutral-500">24/7 Dedicated Support</li>
             </ul>
           </div>
 
