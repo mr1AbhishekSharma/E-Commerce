@@ -1,21 +1,68 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package, Heart } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package, Heart, Search } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useWishlist } from "@/context/WishlistContext";
+import { getProducts, formatMediaUrl } from "@/lib/api";
+import { Product } from "@/types";
 
 export default function Navbar() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { totalCount } = useCart();
   const { user, logout } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
   const { wishlistCount } = useWishlist();
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      const results = await getProducts({ search: searchQuery.trim() });
+      setSearchResults(results.slice(0, 5));
+      setSearchLoading(false);
+      setSearchOpen(true);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setSearchOpen(false);
+      router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -146,6 +193,73 @@ export default function Navbar() {
               </Link>
             )}
           </nav>
+
+          {/* Live Search Bar */}
+          <div ref={searchRef} className="relative hidden lg:block w-56 xl:w-72">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setSearchOpen(true);
+                  }}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setSearchOpen(true);
+                  }}
+                  placeholder="Search fashion drops..."
+                  className="w-full pl-9 pr-4 py-1.5 text-xs rounded-full border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black bg-gray-50 focus:bg-white transition"
+                />
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
+              </div>
+            </form>
+
+            {/* Live Search Dropdown */}
+            {searchOpen && (searchLoading || searchResults.length > 0) && (
+              <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                {searchLoading ? (
+                  <div className="p-4 text-center text-xs text-gray-400">Searching...</div>
+                ) : (
+                  <div>
+                    <div className="p-2 space-y-1">
+                      {searchResults.map((prod) => (
+                        <Link
+                          key={prod.id}
+                          href={`/product/${prod.slug}`}
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-50 transition"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={formatMediaUrl(prod.image)}
+                            alt={prod.title}
+                            className="w-9 h-9 object-cover rounded-lg bg-gray-100 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-900 truncate">{prod.title}</p>
+                            <p className="text-[10px] text-gray-400">{prod.category_title || "Fashion"}</p>
+                          </div>
+                          <span className="text-xs font-bold text-gray-900">
+                            {formatPrice(prod.discount_price || prod.price)}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                    <button
+                      onClick={handleSearchSubmit}
+                      className="w-full text-center py-2 text-[11px] font-bold text-neutral-800 bg-neutral-50 hover:bg-neutral-100 border-t border-gray-100 block transition"
+                    >
+                      View all results for &ldquo;{searchQuery}&rdquo; →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Cart & Auth Actions */}
           <div className="flex items-center space-x-4">
@@ -278,6 +392,26 @@ export default function Navbar() {
               </button>
             </div>
           </div>
+
+          {/* Mobile Search input */}
+          <form
+            onSubmit={(e) => {
+              handleSearchSubmit(e);
+              setMobileMenuOpen(false);
+            }}
+            className="pt-1 pb-1"
+          >
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 focus:outline-hidden focus:ring-2 focus:ring-black bg-gray-50"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+            </div>
+          </form>
 
           <Link
             href="/"
