@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Product } from "@/types";
 import { formatMediaUrl } from "@/lib/api";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { Heart } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +14,8 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const imageUrl = formatMediaUrl(product.image);
   const { formatPrice } = useCurrency();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isFav = isInWishlist(product.slug);
 
   return (
     <div className="group relative bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between">
@@ -35,6 +39,25 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
         </div>
+
+        {/* Wishlist Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          className={`absolute top-3 right-3 z-20 p-2 rounded-full transition-all duration-200 shadow-xs ${
+            isFav
+              ? "bg-red-50 text-red-500 hover:bg-red-100"
+              : "bg-white/80 backdrop-blur-xs text-gray-500 hover:text-red-500 hover:bg-white"
+          }`}
+          aria-label={isFav ? "Remove from wishlist" : "Add to wishlist"}
+          title={isFav ? "In Wishlist" : "Add to Wishlist"}
+        >
+          <Heart className={`w-4 h-4 ${isFav ? "fill-red-500 stroke-red-500" : ""}`} />
+        </button>
 
         {/* Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}

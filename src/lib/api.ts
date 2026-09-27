@@ -1,4 +1,4 @@
-import { Category, Product, Slide, CartOrder, User, BillingAddress } from "@/types";
+import { Category, Product, Slide, CartOrder, User, BillingAddress, WishlistItem } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
@@ -347,6 +347,54 @@ export async function updateUserAddress(token: string, id: number, address: Part
 export async function deleteUserAddress(token: string, id: number): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/addresses/${id}/`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+// ─── Wishlist APIs ────────────────────────────────────────────────────────────
+
+export async function getWishlist(token: string): Promise<WishlistItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/wishlist/`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function toggleWishlistApi(
+  token: string,
+  slug: string
+): Promise<{ status: "added" | "removed"; message: string; wishlist_item?: WishlistItem; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/wishlist/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ slug }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { status: "removed", message: data.error || "Failed", error: data.error };
+    return data;
+  } catch (error) {
+    return { status: "removed", message: "Network error", error: "Network error" };
+  }
+}
+
+export async function removeFromWishlistApi(token: string, slug: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/wishlist/${slug}/`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
