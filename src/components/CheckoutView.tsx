@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { submitCheckout, submitPayment, formatMediaUrl } from "@/lib/api";
+import { submitCheckout, submitPayment, formatMediaUrl, getUserAddresses } from "@/lib/api";
+import { BillingAddress } from "@/types";
 import {
   CreditCard,
   ShieldCheck,
@@ -15,6 +16,7 @@ import {
   ArrowRight,
   ShoppingBag,
   Lock,
+  MapPin,
 } from "lucide-react";
 
 const COUNTRY_OPTIONS = [
@@ -37,9 +39,43 @@ export default function CheckoutView() {
   const [formData, setFormData] = useState({
     street_address: "",
     apartment_address: "",
-    country: "US",
+    country: "IN",
     zip: "",
   });
+
+  const [savedAddresses, setSavedAddresses] = useState<BillingAddress[]>([]);
+  const [selectedSavedId, setSelectedSavedId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    async function loadAddresses() {
+      const addrs = await getUserAddresses(token!);
+      if (addrs && addrs.length > 0) {
+        setSavedAddresses(addrs);
+        const def = addrs.find((a) => a.default) || addrs[0];
+        if (def && def.id) {
+          setSelectedSavedId(def.id);
+          setFormData({
+            street_address: def.street_address,
+            apartment_address: def.apartment_address || "",
+            country: def.country || "IN",
+            zip: def.zip,
+          });
+        }
+      }
+    }
+    loadAddresses();
+  }, [token]);
+
+  const handleSelectSavedAddress = (addr: BillingAddress) => {
+    setSelectedSavedId(addr.id || null);
+    setFormData({
+      street_address: addr.street_address,
+      apartment_address: addr.apartment_address || "",
+      country: addr.country || "IN",
+      zip: addr.zip,
+    });
+  };
 
   const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
   const [expiry, setExpiry] = useState("12/28");
@@ -240,6 +276,43 @@ export default function CheckoutView() {
                 Shipping Address
               </h2>
             </div>
+
+            {savedAddresses.length > 0 && (
+              <div className="space-y-2 mb-4">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
+                  Select a Saved Address
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      type="button"
+                      key={addr.id}
+                      onClick={() => handleSelectSavedAddress(addr)}
+                      className={`text-left p-3.5 rounded-xl border transition text-xs flex flex-col gap-1 ${
+                        selectedSavedId === addr.id
+                          ? "border-black bg-neutral-50 ring-1 ring-black"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-bold text-gray-900 truncate">
+                          {addr.street_address}
+                        </span>
+                        {addr.default && (
+                          <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded-full font-bold">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-500">
+                        {addr.apartment_address ? `${addr.apartment_address}, ` : ""}
+                        {addr.country} - {addr.zip}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4">
               <div>

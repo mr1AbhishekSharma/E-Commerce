@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (username: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  refreshUser: () => Promise<void>;
   logout: () => void;
 }
 
@@ -103,6 +104,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const userData = await getCurrentUser(token);
+      if (userData) {
+        setUser(userData);
+      }
+    } catch (e) {
+      console.error("Failed to refresh user:", e);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("vibe_token");
     localStorage.removeItem("vibe_refresh");
@@ -111,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -166,6 +166,14 @@ export default function Navbar() {
                       <p className="text-sm font-semibold text-gray-900 truncate">{user.username}</p>
                     </div>
                     <Link
+                      href="/profile"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      <UserIcon className="w-4 h-4 text-gray-500" />
+                      My Profile
+                    </Link>
+                    <Link
                       href="/orders"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -282,6 +290,13 @@ export default function Navbar() {
           </Link>
           {user ? (
             <>
+              <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-base font-medium text-gray-900 hover:bg-gray-50 rounded px-2"
+              >
+                My Profile
+              </Link>
               <Link
                 href="/orders"
                 onClick={() => setMobileMenuOpen(false)}
