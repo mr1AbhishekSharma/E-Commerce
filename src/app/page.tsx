@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Sparkles, ShieldCheck, Truck, RefreshCw, Layers } from "lucide-react";
 import { getCategories, getProducts, getSlides, formatMediaUrl } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
@@ -58,12 +57,11 @@ export default async function HomePage() {
 
           <div className="relative w-full max-w-md aspect-square rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-900/60 backdrop-blur-sm group">
             {activeSlide?.image ? (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={formatMediaUrl(activeSlide.image)}
                 alt={activeSlide.caption1 || "The Vibe Style"}
-                fill
-                className="object-cover group-hover:scale-105 transition duration-700"
-                priority
+                className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-neutral-800 to-neutral-900">
@@ -158,11 +156,11 @@ export default async function HomePage() {
                   className="group relative rounded-2xl overflow-hidden bg-gray-100 aspect-square flex flex-col justify-end p-6 border border-gray-100 hover:shadow-xl transition-all duration-300"
                 >
                   {cat.image ? (
-                    <Image
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
                       src={formatMediaUrl(cat.image)}
                       alt={cat.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition duration-500"
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     />
                   ) : (
                     <div className="absolute inset-0 bg-neutral-900 group-hover:bg-neutral-800 transition" />
