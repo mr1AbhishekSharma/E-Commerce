@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package } from "lucide-react";
+import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package, Heart } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function Navbar() {
   const { totalCount } = useCart();
   const { user, logout } = useAuth();
   const { currency, setCurrency, formatPrice } = useCurrency();
+  const { wishlistCount } = useWishlist();
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -211,6 +213,21 @@ export default function Navbar() {
               </Link>
             )}
 
+            {/* Wishlist Icon */}
+            <Link
+              href="/wishlist"
+              className="relative p-2 text-gray-700 hover:text-red-600 transition flex items-center"
+              aria-label="Wishlist"
+              title="My Wishlist"
+            >
+              <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
             {/* Cart Icon */}
             <Link
               href="/cart"
@@ -275,6 +292,18 @@ export default function Navbar() {
             className="block py-2 text-base font-medium text-gray-900 hover:bg-gray-50 rounded px-2"
           >
             Shop All
+          </Link>
+          <Link
+            href="/wishlist"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block py-2 text-base font-medium text-gray-900 hover:bg-gray-50 rounded px-2 flex justify-between items-center"
+          >
+            <span>Wishlist</span>
+            {wishlistCount > 0 && (
+              <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                {wishlistCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/cart"

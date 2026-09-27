@@ -89,8 +89,15 @@ export interface User {
   profile?: UserProfile;
 }
 
+export interface WishlistItem {
+  id: number;
+  item: Product;
+  created_at: string;
+}
+
 export interface LocalCartItem {
   product: Product;
   quantity: number;
 }
+
 
