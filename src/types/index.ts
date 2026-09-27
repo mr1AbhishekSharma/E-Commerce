@@ -43,11 +43,16 @@ export interface OrderItem {
 }
 
 export interface BillingAddress {
+  id?: number;
   street_address: string;
   apartment_address?: string;
   country: string;
   zip: string;
+  address_type?: 'B' | 'S';
+  default?: boolean;
 }
+
+export type Address = BillingAddress;
 
 export interface CartOrder {
   id: number;
@@ -67,13 +72,25 @@ export interface CartOrder {
   refund_granted?: boolean;
 }
 
+export interface UserProfile {
+  phone?: string | null;
+  avatar?: string | null;
+  gender?: 'M' | 'F' | 'O' | string | null;
+  date_of_birth?: string | null;
+  created_at?: string;
+}
+
 export interface User {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
+  profile?: UserProfile;
 }
 
 export interface LocalCartItem {
   product: Product;
   quantity: number;
 }
+

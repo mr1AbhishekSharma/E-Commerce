@@ -273,6 +273,89 @@ export async function submitRefundRequest(token: string, ref_code: string, reaso
   }
 }
 
+export async function updateUserProfile(
+  token: string,
+  data: { first_name?: string; last_name?: string; email?: string; phone?: string; gender?: string; date_of_birth?: string }
+): Promise<{ user?: User; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/profile/`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const resData = await res.json();
+    if (!res.ok) return { error: resData.detail || "Failed to update profile" };
+    return { user: resData };
+  } catch (error) {
+    return { error: "Network error updating profile" };
+  }
+}
+
+export async function getUserAddresses(token: string, type?: "B" | "S"): Promise<BillingAddress[]> {
+  try {
+    const query = type ? `?type=${type}` : "";
+    const res = await fetch(`${API_BASE}/addresses/${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function createUserAddress(token: string, address: BillingAddress): Promise<{ address?: BillingAddress; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/addresses/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(address),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: Object.values(data)[0] as string || "Failed to save address" };
+    return { address: data };
+  } catch (error) {
+    return { error: "Network error saving address" };
+  }
+}
+
+export async function updateUserAddress(token: string, id: number, address: Partial<BillingAddress>): Promise<{ address?: BillingAddress; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/addresses/${id}/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(address),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: "Failed to update address" };
+    return { address: data };
+  } catch (error) {
+    return { error: "Network error updating address" };
+  }
+}
+
+export async function deleteUserAddress(token: string, id: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/addresses/${id}/`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
 export function formatMediaUrl(url: string | null | undefined): string {
   if (!url) return "/placeholder.png";
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -280,3 +363,4 @@ export function formatMediaUrl(url: string | null | undefined): string {
   }
   return `http://127.0.0.1:8000${url.startsWith("/") ? "" : "/"}${url}`;
 }
+
