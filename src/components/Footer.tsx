@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
@@ -116,19 +114,19 @@ export default function Footer() {
             <p className="text-sm text-neutral-400 mb-3">
               Subscribe for exclusive drops, offers, and seasonal discounts.
             </p>
-            <form onSubmit={(e) => e.preventDefault()} className="flex gap-2">
+            <div className="flex gap-2">
               <input
                 type="email"
                 placeholder="Enter your email"
                 className="bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white flex-grow"
               />
               <button
-                type="submit"
+                type="button"
                 className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-neutral-200 transition"
               >
                 Join
               </button>
-            </form>
+            </div>
           </div>
         </div>
 
