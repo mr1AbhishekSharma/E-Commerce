@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, ShieldCheck, Truck, RotateCcw } from "lucide-react";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductPrice from "@/components/ProductPrice";
+import ProductReviewsSection from "@/components/ProductReviewsSection";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -105,6 +106,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Customer Reviews & Ratings */}
+      <ProductReviewsSection slug={slug} />
     </div>
   );
 }

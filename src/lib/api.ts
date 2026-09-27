@@ -1,4 +1,4 @@
-import { Category, Product, Slide, CartOrder, User, BillingAddress, WishlistItem } from "@/types";
+import { Category, Product, Slide, CartOrder, User, BillingAddress, WishlistItem, Review } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
 
@@ -401,6 +401,42 @@ export async function removeFromWishlistApi(token: string, slug: string): Promis
     return res.ok;
   } catch (error) {
     return false;
+  }
+}
+
+// ─── Product Reviews APIs ─────────────────────────────────────────────────────
+
+export async function getProductReviews(
+  slug: string
+): Promise<{ product_slug: string; average_rating: number; review_count: number; reviews: Review[] }> {
+  try {
+    const res = await fetch(`${API_BASE}/products/${slug}/reviews/`, { cache: "no-store" });
+    if (!res.ok) return { product_slug: slug, average_rating: 5.0, review_count: 0, reviews: [] };
+    return await res.json();
+  } catch (error) {
+    return { product_slug: slug, average_rating: 5.0, review_count: 0, reviews: [] };
+  }
+}
+
+export async function submitProductReview(
+  token: string,
+  slug: string,
+  data: { rating: number; headline: string; comment: string }
+): Promise<{ review?: Review; message?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/products/${slug}/reviews/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const resData = await res.json();
+    if (!res.ok) return { error: resData.error || "Failed to submit review" };
+    return resData;
+  } catch (error) {
+    return { error: "Network error submitting review" };
   }
 }
 

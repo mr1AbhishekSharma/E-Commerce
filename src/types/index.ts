@@ -31,6 +31,17 @@ export interface Product {
   description_long: string;
   image: string;
   is_active: boolean;
+  average_rating?: number;
+  review_count?: number;
+}
+
+export interface Review {
+  id: number;
+  user_name: string;
+  rating: number;
+  headline: string;
+  comment: string;
+  created_at: string;
 }
 
 export interface OrderItem {

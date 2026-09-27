@@ -5,7 +5,7 @@ import { Product } from "@/types";
 import { formatMediaUrl } from "@/lib/api";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useWishlist } from "@/context/WishlistContext";
-import { Heart } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -90,6 +90,17 @@ export default function ProductCard({ product }: ProductCardProps) {
           <h3 className="text-sm font-semibold text-gray-900 group-hover:text-black line-clamp-1">
             <Link href={`/product/${product.slug}`}>{product.title}</Link>
           </h3>
+          <div className="flex items-center gap-1 mt-1 text-xs">
+            <div className="flex items-center text-amber-400">
+              <Star className="w-3.5 h-3.5 fill-current" />
+            </div>
+            <span className="font-bold text-gray-800">
+              {product.average_rating ? Number(product.average_rating).toFixed(1) : "5.0"}
+            </span>
+            <span className="text-gray-400 text-[11px]">
+              ({product.review_count || 0})
+            </span>
+          </div>
           {product.description_short && (
             <p className="text-xs text-gray-500 mt-1 line-clamp-2">
               {product.description_short}
