@@ -26,11 +26,36 @@ export async function getCategories(): Promise<Category[]> {
   }
 }
 
-export async function getProducts(categorySlug?: string, search?: string): Promise<Product[]> {
+export async function getProducts(
+  categorySlugOrOptions?: string | {
+    categorySlug?: string;
+    search?: string;
+    ordering?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  },
+  searchParam?: string
+): Promise<Product[]> {
   try {
     const params = new URLSearchParams();
-    if (categorySlug) params.append("category", categorySlug);
-    if (search) params.append("search", search);
+    if (typeof categorySlugOrOptions === "object" && categorySlugOrOptions !== null) {
+      if (categorySlugOrOptions.categorySlug && categorySlugOrOptions.categorySlug !== "all") {
+        params.append("category", categorySlugOrOptions.categorySlug);
+      }
+      if (categorySlugOrOptions.search) params.append("search", categorySlugOrOptions.search);
+      if (categorySlugOrOptions.ordering) params.append("ordering", categorySlugOrOptions.ordering);
+      if (categorySlugOrOptions.minPrice !== undefined && categorySlugOrOptions.minPrice !== null) {
+        params.append("min_price", categorySlugOrOptions.minPrice.toString());
+      }
+      if (categorySlugOrOptions.maxPrice !== undefined && categorySlugOrOptions.maxPrice !== null) {
+        params.append("max_price", categorySlugOrOptions.maxPrice.toString());
+      }
+    } else {
+      if (categorySlugOrOptions && categorySlugOrOptions !== "all") {
+        params.append("category", categorySlugOrOptions);
+      }
+      if (searchParam) params.append("search", searchParam);
+    }
 
     const query = params.toString() ? `?${params.toString()}` : "";
     const res = await fetch(`${API_BASE}/products/${query}`, { cache: "no-store" });
