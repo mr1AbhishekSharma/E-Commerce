@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { getUserOrders, formatMediaUrl } from "@/lib/api";
 import { CartOrder } from "@/types";
 import { Package, Truck, CheckCircle2, RotateCcw, ArrowRight, Clock } from "lucide-react";
 
 export default function OrdersView() {
   const { user, token, isLoading: authLoading } = useAuth();
+  const { formatPrice } = useCurrency();
   const [orders, setOrders] = useState<CartOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -72,7 +74,7 @@ export default function OrdersView() {
           No Orders Yet
         </h1>
         <p className="text-gray-500 max-w-md mx-auto mb-8 text-sm">
-          You haven't placed any orders with this account yet. Discover our latest collection and make your first order today!
+          You haven&apos;t placed any orders with this account yet. Discover our latest collection and make your first order today!
         </p>
         <Link
           href="/shop"
@@ -119,6 +121,7 @@ export default function OrdersView() {
               key={order.id}
               className="bg-white border border-gray-200/90 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition"
             >
+              {/* Order Card Header */}
               <div className="bg-gray-50/80 px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-6">
                   <div>
@@ -140,11 +143,12 @@ export default function OrdersView() {
                       Total
                     </span>
                     <p className="text-sm font-bold text-gray-900">
-                      ${order.total ? order.total.toFixed(2) : "0.00"}
+                      {formatPrice(order.total || 0)}
                     </p>
                   </div>
                 </div>
 
+                {/* Status Badges */}
                 <div className="flex items-center gap-2">
                   {order.refund_granted ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
@@ -175,6 +179,7 @@ export default function OrdersView() {
                 </div>
               </div>
 
+              {/* Order Items List */}
               <div className="p-6 divide-y divide-gray-100">
                 {order.items?.map((item) => (
                   <div
@@ -183,6 +188,7 @@ export default function OrdersView() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 p-1 flex items-center justify-center shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={formatMediaUrl(item.item?.image)}
                           alt={item.item?.title || "Product"}
@@ -197,18 +203,19 @@ export default function OrdersView() {
                           {item.item?.title}
                         </Link>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Quantity: {item.quantity} × ${item.final_price?.toFixed(2)}
+                          Quantity: {item.quantity} × {formatPrice(item.final_price)}
                         </p>
                       </div>
                     </div>
 
                     <span className="font-bold text-sm text-gray-900">
-                      ${(item.final_price * item.quantity).toFixed(2)}
+                      {formatPrice(item.final_price * item.quantity)}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* Card Footer: Shipping address info and refund action */}
               <div className="bg-gray-50/50 px-6 py-3.5 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs text-gray-500">
                 <div>
                   {order.billing_address ? (

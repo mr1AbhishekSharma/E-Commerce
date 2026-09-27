@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrency } from "@/context/CurrencyContext";
 import { submitCheckout, submitPayment, formatMediaUrl } from "@/lib/api";
 import {
   CreditCard,
@@ -31,6 +32,7 @@ export default function CheckoutView() {
   const router = useRouter();
   const { items, subtotal, discount, total, clearCart } = useCart();
   const { user, token } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const [formData, setFormData] = useState({
     street_address: "",
@@ -75,6 +77,7 @@ export default function CheckoutView() {
     setErrorMsg(null);
 
     try {
+      // Step 1: Submit Shipping/Billing Address
       const checkoutRes = await submitCheckout(token, {
         street_address: formData.street_address,
         apartment_address: formData.apartment_address,
@@ -88,6 +91,7 @@ export default function CheckoutView() {
         return;
       }
 
+      // Step 2: Process Payment (Stripe test token)
       const paymentRes = await submitPayment(token, "tok_visa");
 
       if (paymentRes.error) {
@@ -96,6 +100,7 @@ export default function CheckoutView() {
         return;
       }
 
+      // Succeeded!
       const finalOrder = paymentRes.order || checkoutRes.order;
       setOrderSuccess({
         ref_code: finalOrder.ref_code || "VIBE-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
@@ -109,6 +114,7 @@ export default function CheckoutView() {
     }
   };
 
+  // If order was placed successfully, show confirmation screen
   if (orderSuccess) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
@@ -134,7 +140,7 @@ export default function CheckoutView() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 font-medium">Amount Paid:</span>
-            <span className="font-bold text-gray-900">${orderSuccess.total.toFixed(2)}</span>
+            <span className="font-bold text-gray-900">{formatPrice(orderSuccess.total)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 font-medium">Payment Status:</span>
@@ -161,6 +167,7 @@ export default function CheckoutView() {
     );
   }
 
+  // If bag is empty
   if (items.length === 0) {
     return (
       <div className="max-w-xl mx-auto px-4 py-20 text-center">
@@ -190,6 +197,7 @@ export default function CheckoutView() {
         </p>
       </div>
 
+      {/* Guest Notice if not authenticated */}
       {!user && (
         <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -220,7 +228,9 @@ export default function CheckoutView() {
       )}
 
       <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* Left Form: Shipping & Payment */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Section 1: Shipping Address */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/80 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -299,6 +309,7 @@ export default function CheckoutView() {
             </div>
           </div>
 
+          {/* Section 2: Payment Details */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/80 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -370,17 +381,20 @@ export default function CheckoutView() {
           </div>
         </div>
 
+        {/* Right Column: Order Review */}
         <div className="lg:col-span-1">
           <div className="bg-gray-50 rounded-3xl p-6 sm:p-8 border border-gray-200/80 space-y-6 sticky top-24">
             <h2 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-3">
               Order Review
             </h2>
 
+            {/* Items */}
             <div className="max-h-60 overflow-y-auto divide-y divide-gray-200 pr-1">
               {items.map((cartItem) => (
                 <div key={cartItem.product.id} className="py-3 flex items-center justify-between text-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-lg border border-gray-200 p-1 flex items-center justify-center shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={formatMediaUrl(cartItem.product.image)}
                         alt={cartItem.product.title}
@@ -395,25 +409,25 @@ export default function CheckoutView() {
                     </div>
                   </div>
                   <span className="font-bold text-gray-900">
-                    $
-                    {(
+                    {formatPrice(
                       (cartItem.product.discount_price || cartItem.product.price) *
                       cartItem.quantity
-                    ).toFixed(2)}
+                    )}
                   </span>
                 </div>
               ))}
             </div>
 
+            {/* Pricing details */}
             <div className="space-y-2 pt-3 border-t border-gray-200 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+                <span className="font-medium text-gray-900">{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>Coupon Discount</span>
-                  <span>-${discount.toFixed(2)}</span>
+                  <span>-{formatPrice(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-gray-600">
@@ -422,10 +436,11 @@ export default function CheckoutView() {
               </div>
               <div className="border-t border-gray-200 pt-3 flex justify-between text-xl font-black text-gray-900">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>{formatPrice(total)}</span>
               </div>
             </div>
 
+            {/* Place Order Button */}
             <button
               type="submit"
               disabled={isProcessing}
@@ -436,7 +451,7 @@ export default function CheckoutView() {
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Place Order • ${total.toFixed(2)}</span>
+                  <span>Place Order • {formatPrice(total)}</span>
                 </>
               )}
             </button>
