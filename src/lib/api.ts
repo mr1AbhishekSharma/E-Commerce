@@ -80,21 +80,21 @@ export async function getProduct(slug: string): Promise<Product | null> {
 
 // ─── Auth APIs ────────────────────────────────────────────────────────────────
 
-export async function loginUser(username: string, password: string): Promise<{ access: string; refresh: string; error?: string; is_verified?: boolean; email?: string }> {
+export async function loginUser(emailOrUsername: string, password: string): Promise<{ access: string; refresh: string; error?: string; is_verified?: boolean; email?: string }> {
   try {
     const res = await fetch(`${API_BASE}/auth/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email: emailOrUsername, username: emailOrUsername, password }),
     });
     const data = await res.json();
     if (!res.ok) {
       return {
         access: "",
         refresh: "",
-        error: data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : "Invalid credentials"),
+        error: data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : (data.email ? data.email[0] : "Invalid credentials")),
         is_verified: data.is_verified !== false,
-        email: data.email || "",
+        email: data.email || (emailOrUsername.includes("@") ? emailOrUsername : ""),
       };
     }
     return data;

@@ -23,7 +23,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<LoginResult>;
+  login: (emailOrUsername: string, password: string) => Promise<LoginResult>;
   register: (username: string, email: string, password: string) => Promise<RegisterResult>;
   refreshUser: () => Promise<void>;
   logout: () => void;
@@ -60,10 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<LoginResult> => {
+  const login = async (emailOrUsername: string, password: string): Promise<LoginResult> => {
     setIsLoading(true);
     try {
-      const res = await loginUser(username, password);
+      const res = await loginUser(emailOrUsername, password);
       if (res.error || !res.access) {
         setIsLoading(false);
         return {
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (userData) {
         setUser(userData);
       } else {
-        setUser({ id: 0, username, email: "" });
+        setUser({ id: 0, username: emailOrUsername, email: emailOrUsername.includes("@") ? emailOrUsername : "" });
       }
 
       setIsLoading(false);

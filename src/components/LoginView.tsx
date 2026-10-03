@@ -14,7 +14,7 @@ export default function LoginView() {
   const verifiedParam = searchParams.get("verified") === "true";
   const { login } = useAuth();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,16 +32,16 @@ export default function LoginView() {
     setResendStatus(null);
     setIsSubmitting(true);
 
-    const res = await login(username, password);
+    const res = await login(email, password);
     setIsSubmitting(false);
 
     if (!res.success) {
       if (res.isVerified === false) {
         setIsUnverified(true);
-        setUnverifiedEmail(res.email || username);
+        setUnverifiedEmail(res.email || email);
         setErrorMsg(res.error || "Account is not verified. Please check your email.");
       } else {
-        setErrorMsg(res.error || "Invalid username or password");
+        setErrorMsg(res.error || "Invalid email or password");
       }
       return;
     }
@@ -50,7 +50,7 @@ export default function LoginView() {
   };
 
   const handleResend = async () => {
-    const targetEmail = unverifiedEmail || username;
+    const targetEmail = unverifiedEmail || email;
     if (!targetEmail) return;
 
     setIsResending(true);
@@ -61,7 +61,7 @@ export default function LoginView() {
     if (res.success) {
       setResendStatus({ type: "success", text: res.message || "Verification link resent! Check your inbox." });
     } else {
-      setResendStatus({ type: "error", text: res.error || "Could not resend email. Please verify username/email." });
+      setResendStatus({ type: "error", text: res.error || "Could not resend email. Please verify your email address." });
     }
   };
 
@@ -82,7 +82,7 @@ export default function LoginView() {
           <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
           <div>
             <span className="font-semibold block">Account Verified!</span>
-            <span>You can now sign in with your username and password.</span>
+            <span>You can now sign in with your email address and password.</span>
           </div>
         </div>
       )}
@@ -145,16 +145,17 @@ export default function LoginView() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">
-            Username
+            Email Address
           </label>
           <div className="relative">
-            <UserIcon className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+            <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
             <input
-              type="text"
+              type="email"
               required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. testuser"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
