@@ -330,6 +330,76 @@ export async function submitPayment(token: string, stripeToken: string = "tok_vi
   }
 }
 
+export interface RazorpayOrderResponse {
+  razorpay_order_id?: string;
+  amount?: number;
+  display_amount?: number;
+  currency?: string;
+  key_id?: string;
+  business_name?: string;
+  order_ref?: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  error?: string;
+}
+
+export interface RazorpayVerifyResponse {
+  success?: boolean;
+  message?: string;
+  payment_id?: string;
+  order?: CartOrder;
+  error?: string;
+}
+
+export async function createRazorpayOrder(
+  token: string,
+  currency: string = "INR"
+): Promise<RazorpayOrderResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/razorpay/create-order/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currency }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Failed to initialize Razorpay order" };
+    return data;
+  } catch (error) {
+    return { error: "Network error connecting to payment gateway" };
+  }
+}
+
+export async function verifyRazorpayPayment(
+  token: string,
+  payload: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature?: string;
+  }
+): Promise<RazorpayVerifyResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/razorpay/verify-payment/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || "Razorpay signature verification failed" };
+    return data;
+  } catch (error) {
+    return { error: "Network error while verifying payment" };
+  }
+}
+
 export async function getUserOrders(token: string): Promise<CartOrder[]> {
   try {
     const res = await fetch(`${API_BASE}/orders/`, {

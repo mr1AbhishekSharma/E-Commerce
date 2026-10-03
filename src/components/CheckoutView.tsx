@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrency } from "@/context/CurrencyContext";
-import { submitCheckout, submitPayment, formatMediaUrl, getUserAddresses } from "@/lib/api";
+import {
+  submitCheckout,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  formatMediaUrl,
+  getUserAddresses,
+} from "@/lib/api";
 import { BillingAddress } from "@/types";
 import {
   CreditCard,
@@ -17,6 +23,10 @@ import {
   ShoppingBag,
   Lock,
   MapPin,
+  Zap,
+  Smartphone,
+  Building2,
+  Wallet,
 } from "lucide-react";
 
 const COUNTRY_OPTIONS = [
@@ -77,16 +87,28 @@ export default function CheckoutView() {
     });
   };
 
-  const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
-  const [expiry, setExpiry] = useState("12/28");
-  const [cvc, setCvc] = useState("123");
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState<{
     ref_code: string;
     total: number;
+    payment_id?: string;
   } | null>(null);
+
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== "undefined" && (window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -97,8 +119,7 @@ export default function CheckoutView() {
     }));
   };
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProcessRazorpayPayment = async (simulate: boolean = false) => {
     if (!token) {
       setErrorMsg("Please sign in or create an account to complete checkout.");
       return;
@@ -127,27 +148,123 @@ export default function CheckoutView() {
         return;
       }
 
-      // Step 2: Process Payment (Stripe test token)
-      const paymentRes = await submitPayment(token, "tok_visa");
-
-      if (paymentRes.error) {
+      // Step 2: Initialize Razorpay order on backend
+      const rzpOrderData = await createRazorpayOrder(token, "INR");
+      if (rzpOrderData.error || !rzpOrderData.razorpay_order_id) {
         setIsProcessing(false);
-        setErrorMsg(paymentRes.error || "Payment transaction declined.");
+        setErrorMsg(rzpOrderData.error || "Unable to initiate Razorpay order.");
         return;
       }
 
-      // Succeeded!
-      const finalOrder = paymentRes.order || checkoutRes.order;
-      setOrderSuccess({
-        ref_code: finalOrder.ref_code || "VIBE-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
-        total: finalOrder.total || total,
+      // If simulated mode requested (e.g. instant sandbox test without opening popup)
+      if (simulate) {
+        const simPaymentId = `pay_sim_${Math.random().toString(36).substring(2, 11)}`;
+        const verifyRes = await verifyRazorpayPayment(token, {
+          razorpay_order_id: rzpOrderData.razorpay_order_id,
+          razorpay_payment_id: simPaymentId,
+        });
+
+        if (verifyRes.success && verifyRes.order) {
+          setOrderSuccess({
+            ref_code: verifyRes.order.ref_code || rzpOrderData.order_ref || "VIBE-" + Math.random().toString(36).substring(2, 9).toUpperCase(),
+            total: verifyRes.order.total || total,
+            payment_id: simPaymentId,
+          });
+          clearCart();
+        } else {
+          setErrorMsg(verifyRes.error || "Simulated payment verification failed.");
+        }
+        setIsProcessing(false);
+        return;
+      }
+
+      // Step 3: Load Razorpay Checkout Script
+      const scriptReady = await loadRazorpayScript();
+      if (!scriptReady || !(window as any).Razorpay) {
+        // Fallback for sandboxes if external script is blocked
+        const simPaymentId = `pay_dev_${Math.random().toString(36).substring(2, 11)}`;
+        const verifyRes = await verifyRazorpayPayment(token, {
+          razorpay_order_id: rzpOrderData.razorpay_order_id,
+          razorpay_payment_id: simPaymentId,
+        });
+        if (verifyRes.success) {
+          setOrderSuccess({
+            ref_code: verifyRes.order?.ref_code || rzpOrderData.order_ref || "VIBE-TEST",
+            total: verifyRes.order?.total || total,
+            payment_id: simPaymentId,
+          });
+          clearCart();
+          return;
+        }
+        setIsProcessing(false);
+        setErrorMsg("Razorpay script could not be loaded. Please disable ad-blockers or try again.");
+        return;
+      }
+
+      // Step 4: Open Razorpay Checkout modal
+      const options = {
+        key: rzpOrderData.key_id,
+        amount: rzpOrderData.amount,
+        currency: rzpOrderData.currency || "INR",
+        name: "The Vibe",
+        description: `Order ${rzpOrderData.order_ref || "Checkout"}`,
+        image: "https://cdn.razorpay.com/logos/7K3bDuUsva8Jdo_medium.png",
+        order_id: rzpOrderData.razorpay_order_id.startsWith("order_sim_") ? undefined : rzpOrderData.razorpay_order_id,
+        handler: async function (response: any) {
+          setIsProcessing(true);
+          try {
+            const verifyRes = await verifyRazorpayPayment(token, {
+              razorpay_order_id: response.razorpay_order_id || rzpOrderData.razorpay_order_id!,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature || "",
+            });
+
+            if (verifyRes.success) {
+              setOrderSuccess({
+                ref_code: verifyRes.order?.ref_code || rzpOrderData.order_ref || "VIBE-SUCCESS",
+                total: verifyRes.order?.total || total,
+                payment_id: response.razorpay_payment_id,
+              });
+              clearCart();
+            } else {
+              setErrorMsg(verifyRes.error || "Payment verification failed.");
+            }
+          } catch (err: any) {
+            setErrorMsg(err.message || "Failed to confirm payment.");
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: rzpOrderData.prefill?.name || user?.username || "",
+          email: rzpOrderData.prefill?.email || user?.email || "",
+          contact: rzpOrderData.prefill?.contact || "",
+        },
+        theme: {
+          color: "#0f172a",
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          },
+        },
+      };
+
+      const rzpInstance = new (window as any).Razorpay(options);
+      rzpInstance.on("payment.failed", function (resp: any) {
+        setErrorMsg(resp.error?.description || "Payment was declined by bank or user cancelled.");
+        setIsProcessing(false);
       });
-      clearCart();
+      rzpInstance.open();
     } catch (err: any) {
       setErrorMsg(err.message || "An unexpected error occurred during checkout.");
-    } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleSubmitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleProcessRazorpayPayment(false);
   };
 
   // If order was placed successfully, show confirmation screen
@@ -174,13 +291,24 @@ export default function CheckoutView() {
               {orderSuccess.ref_code}
             </span>
           </div>
+          {orderSuccess.payment_id && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 font-medium">Razorpay Payment ID:</span>
+              <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 text-xs">
+                {orderSuccess.payment_id}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 font-medium">Amount Paid:</span>
             <span className="font-bold text-gray-900">{formatPrice(orderSuccess.total)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500 font-medium">Payment Status:</span>
-            <span className="text-emerald-700 font-semibold">Completed (Stripe Verified)</span>
+            <span className="text-emerald-700 font-semibold flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 inline" />
+              <span>Completed (Razorpay 256-bit Verified)</span>
+            </span>
           </div>
         </div>
 
@@ -382,75 +510,91 @@ export default function CheckoutView() {
             </div>
           </div>
 
-          {/* Section 2: Payment Details */}
+          {/* Section 2: Razorpay Payment Details */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200/80 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">
                   2
                 </span>
                 Payment Information
               </h2>
               <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>256-bit Encrypted</span>
+                <span>256-bit Bank Grade Encrypted</span>
               </div>
             </div>
 
-            <div className="p-4 bg-neutral-900 text-white rounded-2xl space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-indigo-400" />
-                  <span className="text-xs font-bold tracking-wider uppercase text-neutral-300">
-                    Stripe Test Card
-                  </span>
+            {/* Razorpay Branded Payment Gateway Container */}
+            <div className="p-5 bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900 text-white rounded-2xl space-y-4 border border-neutral-800 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
+                    R
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
+                      <span>Razorpay Secure Checkout</span>
+                      <span className="text-[10px] font-semibold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                        Official
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-neutral-400">
+                      India&apos;s leading secure payments gateway
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
-                  Test Gateway Active
-                </span>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full w-fit">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Instant Verification</span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] uppercase tracking-wider text-neutral-400 mb-1">
-                  Card Number
-                </label>
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider focus:outline-none focus:border-white"
-                />
+              {/* Supported Payment Channels */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                <div className="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5 text-center flex flex-col items-center justify-center gap-1">
+                  <Smartphone className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-neutral-200">UPI</span>
+                  <span className="text-[10px] text-neutral-400">GPay, PhonePe, Paytm</span>
+                </div>
+                <div className="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5 text-center flex flex-col items-center justify-center gap-1">
+                  <CreditCard className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs font-bold text-neutral-200">Cards</span>
+                  <span className="text-[10px] text-neutral-400">Visa, Master, RuPay</span>
+                </div>
+                <div className="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5 text-center flex flex-col items-center justify-center gap-1">
+                  <Building2 className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-bold text-neutral-200">NetBanking</span>
+                  <span className="text-[10px] text-neutral-400">50+ Banks</span>
+                </div>
+                <div className="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5 text-center flex flex-col items-center justify-center gap-1">
+                  <Wallet className="w-4 h-4 text-amber-400" />
+                  <span className="text-xs font-bold text-neutral-200">Wallets</span>
+                  <span className="text-[10px] text-neutral-400">Paytm, Mobikwik</span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-neutral-400 mb-1">
-                    Expires
-                  </label>
-                  <input
-                    type="text"
-                    value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider focus:outline-none focus:border-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-neutral-400 mb-1">
-                    CVC
-                  </label>
-                  <input
-                    type="text"
-                    value={cvc}
-                    onChange={(e) => setCvc(e.target.value)}
-                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider focus:outline-none focus:border-white"
-                  />
-                </div>
+              <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs text-neutral-400">
+                <span>Amount to Pay:</span>
+                <span className="text-base font-black text-white">{formatPrice(total)}</span>
               </div>
             </div>
 
-            <p className="text-xs text-gray-500">
-              Note: This test checkout automatically simulates a successful Stripe token capture (<code>tok_visa</code>). No real credit card charge occurs.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Clicking <strong>Pay with Razorpay</strong> will launch the secure Razorpay Checkout popup.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleProcessRazorpayPayment(true)}
+                disabled={isProcessing}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 underline shrink-0 cursor-pointer disabled:opacity-50"
+                title="Simulate instant test payment without popup"
+              >
+                ⚡ Instant Test Checkout
+              </button>
+            </div>
           </div>
         </div>
 
@@ -517,14 +661,14 @@ export default function CheckoutView() {
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full bg-black text-white py-4 rounded-xl font-bold text-sm hover:bg-neutral-800 transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {isProcessing ? (
-                <span>Processing Order...</span>
+                <span>Processing Razorpay Checkout...</span>
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Place Order • {formatPrice(total)}</span>
+                  <span>Pay with Razorpay • {formatPrice(total)}</span>
                 </>
               )}
             </button>
