@@ -26,6 +26,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Category, Product, Slide } from "@/types";
 import { formatMediaUrl } from "@/lib/api";
@@ -33,6 +34,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import ProductCard from "@/components/ProductCard";
+import ScrollablePriceRange from "@/components/ScrollablePriceRange";
 
 interface InteractiveHomeViewProps {
   slides: Slide[];
@@ -167,9 +169,12 @@ export default function InteractiveHomeView({
     }
   };
 
-  // 3. Category & Tag Filters for Products
+  // 3. Category, Tag & Price Filters for Products
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [searchFilter, setSearchFilter] = useState<string>("");
+  const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
+  const [showPriceFilter, setShowPriceFilter] = useState<boolean>(false);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
@@ -197,9 +202,14 @@ export default function InteractiveHomeView({
         if (!matchesTitle && !matchesDesc && !matchesCategory) return false;
       }
 
+      // Live price filter
+      const effectivePrice = p.discount_price ?? p.price;
+      if (minPriceFilter !== null && effectivePrice < minPriceFilter) return false;
+      if (maxPriceFilter !== null && effectivePrice > maxPriceFilter) return false;
+
       return true;
     });
-  }, [products, activeFilter, searchFilter]);
+  }, [products, activeFilter, searchFilter, minPriceFilter, maxPriceFilter]);
 
   // 4. Quick View Modal State
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -674,6 +684,26 @@ export default function InteractiveHomeView({
               <span>🏷️ On Sale</span>
             </button>
 
+            {/* Scrollable Price Range Pill */}
+            <button
+              onClick={() => setShowPriceFilter((prev) => !prev)}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition shrink-0 flex items-center gap-1.5 ${
+                minPriceFilter !== null || maxPriceFilter !== null || showPriceFilter
+                  ? "bg-neutral-900 text-white shadow-sm ring-2 ring-neutral-400/40"
+                  : "bg-white text-gray-600 hover:text-black border border-gray-200"
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>
+                {minPriceFilter !== null || maxPriceFilter !== null
+                  ? `Price: ${formatPrice(minPriceFilter ?? 0)} – ${formatPrice(maxPriceFilter ?? 200)}`
+                  : "Price Range"}
+              </span>
+              {(minPriceFilter !== null || maxPriceFilter !== null) && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+            </button>
+
             {categories.map((c) => (
               <button
                 key={c.id}
@@ -689,17 +719,37 @@ export default function InteractiveHomeView({
             ))}
           </div>
 
+          {/* Expandable Scrollable Price Range Slider */}
+          {showPriceFilter && (
+            <div className="mb-8 max-w-xl">
+              <ScrollablePriceRange
+                minPrice={minPriceFilter}
+                maxPrice={maxPriceFilter}
+                minBoundary={0}
+                maxBoundary={200}
+                step={5}
+                mode="client"
+                onChange={(min, max) => {
+                  setMinPriceFilter(min);
+                  setMaxPriceFilter(max);
+                }}
+              />
+            </div>
+          )}
+
           {/* Products Grid */}
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-3xl border border-gray-200 p-8">
               <p className="text-gray-800 font-bold text-base">No products match your filter.</p>
               <p className="text-xs text-gray-400 mt-1">
-                Try selecting &ldquo;All Drops&rdquo; or clearing your search query.
+                Try selecting &ldquo;All Drops&rdquo;, expanding your price range, or clearing your search.
               </p>
               <button
                 onClick={() => {
                   setActiveFilter("all");
                   setSearchFilter("");
+                  setMinPriceFilter(null);
+                  setMaxPriceFilter(null);
                 }}
                 className="mt-4 px-5 py-2 bg-black text-white text-xs font-bold rounded-full hover:bg-neutral-800 transition"
               >

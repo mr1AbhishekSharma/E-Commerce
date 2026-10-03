@@ -1,5 +1,6 @@
 import { getCategories, getProducts } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
+import ScrollablePriceRange from "@/components/ScrollablePriceRange";
 import Link from "next/link";
 import { SlidersHorizontal, X, Search, Sparkles } from "lucide-react";
 
@@ -166,54 +167,18 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </ul>
           </div>
 
-          {/* Quick Price Range Filters */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-2xs space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900">
-              Price Range
-            </h3>
-            <div className="flex flex-col space-y-1.5 text-xs">
-              <Link
-                href={buildFilterUrl({ min_price: undefined, max_price: undefined })}
-                className={`px-3 py-2 rounded-xl transition ${
-                  !min_price && !max_price
-                    ? "bg-neutral-900 text-white font-bold"
-                    : "text-gray-700 hover:bg-neutral-50"
-                }`}
-              >
-                All Price Ranges
-              </Link>
-              <Link
-                href={buildFilterUrl({ min_price: "0", max_price: "50" })}
-                className={`px-3 py-2 rounded-xl transition ${
-                  min_price === "0" && max_price === "50"
-                    ? "bg-neutral-900 text-white font-bold"
-                    : "text-gray-700 hover:bg-neutral-50"
-                }`}
-              >
-                Under $50 / ₹4,250
-              </Link>
-              <Link
-                href={buildFilterUrl({ min_price: "50", max_price: "100" })}
-                className={`px-3 py-2 rounded-xl transition ${
-                  min_price === "50" && max_price === "100"
-                    ? "bg-neutral-900 text-white font-bold"
-                    : "text-gray-700 hover:bg-neutral-50"
-                }`}
-              >
-                $50 – $100 / ₹4,250 – ₹8,500
-              </Link>
-              <Link
-                href={buildFilterUrl({ min_price: "100", max_price: undefined })}
-                className={`px-3 py-2 rounded-xl transition ${
-                  min_price === "100" && !max_price
-                    ? "bg-neutral-900 text-white font-bold"
-                    : "text-gray-700 hover:bg-neutral-50"
-                }`}
-              >
-                $100+ / ₹8,500+
-              </Link>
-            </div>
-          </div>
+          {/* Scrollable Price Range Filter */}
+          <ScrollablePriceRange
+            minPrice={min_price ? parseFloat(min_price) : null}
+            maxPrice={max_price ? parseFloat(max_price) : null}
+            minBoundary={0}
+            maxBoundary={200}
+            step={5}
+            category={category}
+            search={search}
+            sort={sort}
+            mode="url"
+          />
         </aside>
 
         {/* Products Grid */}
