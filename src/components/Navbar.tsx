@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package, Heart, Search } from "lucide-react";
+import { ShoppingBag, Menu, X, User as UserIcon, LogOut, Package, Heart, Search, LayoutDashboard } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -151,9 +151,9 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-            <a href="http://127.0.0.1:8000/admin/" target="_blank" className="hidden sm:inline text-gray-400 hover:text-white transition">
+            <Link href="/admin-panel" className="hidden sm:inline text-gray-400 hover:text-white transition font-medium">
               Admin
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -303,6 +303,14 @@ export default function Navbar() {
                       className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       Request Refund
+                    </Link>
+                    <Link
+                      href="/admin-panel"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+                      Admin Panel
                     </Link>
                     <button
                       onClick={() => {
@@ -466,6 +474,13 @@ export default function Navbar() {
                 className="block py-2 text-base font-medium text-gray-900 hover:bg-gray-50 rounded px-2"
               >
                 My Orders
+              </Link>
+              <Link
+                href="/admin-panel"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-base font-semibold text-indigo-600 hover:bg-indigo-50 rounded px-2"
+              >
+                Admin Panel
               </Link>
               <button
                 onClick={() => {
