@@ -4,12 +4,27 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "@/types";
 import { loginUser, registerUser, getCurrentUser } from "@/lib/api";
 
+export interface LoginResult {
+  success: boolean;
+  error?: string;
+  isVerified?: boolean;
+  email?: string;
+}
+
+export interface RegisterResult {
+  success: boolean;
+  error?: string;
+  requiresVerification?: boolean;
+  email?: string;
+  message?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (username: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (username: string, password: string) => Promise<LoginResult>;
+  register: (username: string, email: string, password: string) => Promise<RegisterResult>;
   refreshUser: () => Promise<void>;
   logout: () => void;
 }
@@ -45,13 +60,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<LoginResult> => {
     setIsLoading(true);
     try {
       const res = await loginUser(username, password);
       if (res.error || !res.access) {
         setIsLoading(false);
-        return { success: false, error: res.error || "Login failed" };
+        return {
+          success: false,
+          error: res.error || "Login failed",
+          isVerified: res.is_verified,
+          email: res.email,
+        };
       }
 
       localStorage.setItem("vibe_token", res.access);
@@ -66,20 +86,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsLoading(false);
-      return { success: true };
+      return { success: true, isVerified: true };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err.message || "An unexpected error occurred" };
     }
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string): Promise<RegisterResult> => {
     setIsLoading(true);
     try {
       const res = await registerUser(username, email, password);
       if (res.error) {
         setIsLoading(false);
         return { success: false, error: res.error };
+      }
+
+      if (res.requires_verification) {
+        setIsLoading(false);
+        return {
+          success: true,
+          requiresVerification: true,
+          email: email,
+          message: res.message || "Verification email sent. Please check your inbox.",
+        };
       }
 
       if (res.access) {

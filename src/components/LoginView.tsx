@@ -4,12 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Lock, User as UserIcon, AlertCircle, ArrowRight } from "lucide-react";
+import { resendVerification } from "@/lib/api";
+import { Lock, User as UserIcon, AlertCircle, ArrowRight, CheckCircle2, AlertTriangle, RefreshCw, Mail } from "lucide-react";
 
 export default function LoginView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/shop";
+  const verifiedParam = searchParams.get("verified") === "true";
   const { login } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -17,19 +19,50 @@ export default function LoginView() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Unverified account state
+  const [isUnverified, setIsUnverified] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string>("");
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    setIsUnverified(false);
+    setResendStatus(null);
     setIsSubmitting(true);
 
     const res = await login(username, password);
+    setIsSubmitting(false);
+
     if (!res.success) {
-      setErrorMsg(res.error || "Invalid username or password");
-      setIsSubmitting(false);
+      if (res.isVerified === false) {
+        setIsUnverified(true);
+        setUnverifiedEmail(res.email || username);
+        setErrorMsg(res.error || "Account is not verified. Please check your email.");
+      } else {
+        setErrorMsg(res.error || "Invalid username or password");
+      }
       return;
     }
 
     router.push(redirectUrl);
+  };
+
+  const handleResend = async () => {
+    const targetEmail = unverifiedEmail || username;
+    if (!targetEmail) return;
+
+    setIsResending(true);
+    setResendStatus(null);
+    const res = await resendVerification(targetEmail);
+    setIsResending(false);
+
+    if (res.success) {
+      setResendStatus({ type: "success", text: res.message || "Verification link resent! Check your inbox." });
+    } else {
+      setResendStatus({ type: "error", text: res.error || "Could not resend email. Please verify username/email." });
+    }
   };
 
   return (
@@ -44,11 +77,69 @@ export default function LoginView() {
         </p>
       </div>
 
-      {errorMsg && (
-        <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMsg}</span>
+      {verifiedParam && !isUnverified && !errorMsg && (
+        <div className="mb-6 p-3.5 bg-green-50 border border-green-200 text-green-800 text-xs rounded-xl flex items-center gap-2.5">
+          <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+          <div>
+            <span className="font-semibold block">Account Verified!</span>
+            <span>You can now sign in with your username and password.</span>
+          </div>
         </div>
+      )}
+
+      {isUnverified ? (
+        <div className="mb-6 p-4 bg-amber-50/80 border border-amber-200 text-amber-900 text-xs rounded-2xl space-y-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-amber-950 block">Account Not Verified</span>
+              <span>{errorMsg || "Your account must be verified before signing in."}</span>
+            </div>
+          </div>
+
+          {resendStatus && (
+            <div
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                resendStatus.type === "success"
+                  ? "bg-green-100/70 border border-green-200 text-green-800"
+                  : "bg-red-100/70 border border-red-200 text-red-800"
+              }`}
+            >
+              {resendStatus.type === "success" ? (
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              ) : (
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              )}
+              <span>{resendStatus.text}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={isResending}
+            className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-sm disabled:opacity-50"
+          >
+            {isResending ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Sending link...</span>
+              </>
+            ) : (
+              <>
+                <Mail className="w-3.5 h-3.5" />
+                <span>Resend Verification Email</span>
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        errorMsg && (
+          <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">

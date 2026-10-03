@@ -88,6 +88,8 @@ export interface UserProfile {
   avatar?: string | null;
   gender?: 'M' | 'F' | 'O' | string | null;
   date_of_birth?: string | null;
+  email_verified?: boolean;
+  email_verified_at?: string | null;
   created_at?: string;
 }
 

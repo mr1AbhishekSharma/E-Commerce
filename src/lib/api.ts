@@ -80,16 +80,22 @@ export async function getProduct(slug: string): Promise<Product | null> {
 
 // ─── Auth APIs ────────────────────────────────────────────────────────────────
 
-export async function loginUser(username: string, password: string): Promise<{ access: string; refresh: string; error?: string }> {
+export async function loginUser(username: string, password: string): Promise<{ access: string; refresh: string; error?: string; is_verified?: boolean; email?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/auth/token/`, {
+    const res = await fetch(`${API_BASE}/auth/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
     if (!res.ok) {
-      return { access: "", refresh: "", error: data.detail || "Invalid credentials" };
+      return {
+        access: "",
+        refresh: "",
+        error: data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : "Invalid credentials"),
+        is_verified: data.is_verified !== false,
+        email: data.email || "",
+      };
     }
     return data;
   } catch (error) {
@@ -97,7 +103,14 @@ export async function loginUser(username: string, password: string): Promise<{ a
   }
 }
 
-export async function registerUser(username: string, email: string, password: string): Promise<{ access?: string; refresh?: string; user?: User; error?: string }> {
+export async function registerUser(username: string, email: string, password: string): Promise<{
+  access?: string;
+  refresh?: string;
+  user?: User;
+  error?: string;
+  message?: string;
+  requires_verification?: boolean;
+}> {
   try {
     const res = await fetch(`${API_BASE}/auth/register/`, {
       method: "POST",
@@ -107,11 +120,45 @@ export async function registerUser(username: string, email: string, password: st
     const data = await res.json();
     if (!res.ok) {
       const firstErr = Object.values(data)[0];
-      return { error: Array.isArray(firstErr) ? firstErr[0] : "Registration failed" };
+      return { error: Array.isArray(firstErr) ? firstErr[0] : (data.detail || "Registration failed") };
     }
     return data;
   } catch (error) {
     return { error: "Network error during registration" };
+  }
+}
+
+export async function verifyEmail(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/verify-email/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.detail || "Verification failed or token expired" };
+    }
+    return { success: true, message: data.message || "Account verified successfully!" };
+  } catch (error) {
+    return { success: false, error: "Network error during verification" };
+  }
+}
+
+export async function resendVerification(email: string): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/resend-verification/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.detail || "Failed to resend verification email" };
+    }
+    return { success: true, message: data.message || "Verification link sent!" };
+  } catch (error) {
+    return { success: false, error: "Network error" };
   }
 }
 
