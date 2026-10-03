@@ -80,12 +80,21 @@ export async function getProduct(slug: string): Promise<Product | null> {
 
 // ─── Auth APIs ────────────────────────────────────────────────────────────────
 
-export async function loginUser(emailOrUsername: string, password: string): Promise<{ access: string; refresh: string; error?: string; is_verified?: boolean; email?: string }> {
+export async function loginUser(
+  emailOrUsername: string,
+  password: string,
+  asAdmin: boolean = false
+): Promise<{ access: string; refresh: string; error?: string; is_verified?: boolean; is_admin?: boolean; email?: string; user?: User }> {
   try {
     const res = await fetch(`${API_BASE}/auth/login/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailOrUsername, username: emailOrUsername, password }),
+      body: JSON.stringify({
+        email: emailOrUsername,
+        username: emailOrUsername,
+        password,
+        as_admin: asAdmin,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -94,6 +103,7 @@ export async function loginUser(emailOrUsername: string, password: string): Prom
         refresh: "",
         error: data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : (data.email ? data.email[0] : "Invalid credentials")),
         is_verified: data.is_verified !== false,
+        is_admin: data.is_admin,
         email: data.email || (emailOrUsername.includes("@") ? emailOrUsername : ""),
       };
     }
