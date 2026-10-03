@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Search,
   Plus,
+  ArrowRight,
   ArrowUpRight,
   TrendingUp,
   DollarSign,
@@ -79,7 +80,8 @@ interface RefundItem {
 
 export default function AdminDashboard() {
   const { formatPrice, currency } = useCurrency();
-  const { user, token } = useAuth();
+  const { user, token, isLoading: authLoading } = useAuth();
+  const isAuthorizedAdmin = Boolean(token && (user?.is_staff || user?.is_superuser));
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [searchQuery, setSearchQuery] = useState("");
@@ -346,8 +348,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    loadDashboardData();
-  }, [token]);
+    if (isAuthorizedAdmin) {
+      loadDashboardData();
+    }
+  }, [token, isAuthorizedAdmin]);
 
   // Derived Analytics Metrics
   const metrics = useMemo(() => {
@@ -524,6 +528,50 @@ export default function AdminDashboard() {
         o.billing_address?.country.toLowerCase().includes(q)
     );
   }, [orders, searchQuery]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-semibold text-neutral-400">Verifying administrator authorization...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorizedAdmin) {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-inner">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <span className="inline-block px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-full text-[11px] font-black uppercase tracking-wider mb-3">
+            Access Restricted
+          </span>
+          <h1 className="text-2xl font-black text-white mb-2">Administrator Access Required</h1>
+          <p className="text-sm text-neutral-400 mb-6 leading-relaxed">
+            The management console is strictly restricted to verified store administrators. Please sign in through the Admin Portal to access operations.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/login?mode=admin"
+              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
+            >
+              Sign In to Admin Portal
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/"
+              className="w-full py-3 px-4 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-medium text-sm rounded-xl border border-neutral-700 transition duration-200 flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Return to Storefront
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-900 text-neutral-100 flex flex-col">

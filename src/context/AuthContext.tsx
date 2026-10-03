@@ -8,7 +8,9 @@ export interface LoginResult {
   success: boolean;
   error?: string;
   isVerified?: boolean;
+  isAdmin?: boolean;
   email?: string;
+  user?: User;
 }
 
 export interface RegisterResult {
@@ -23,7 +25,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (emailOrUsername: string, password: string) => Promise<LoginResult>;
+  login: (emailOrUsername: string, password: string, asAdmin?: boolean) => Promise<LoginResult>;
   register: (username: string, email: string, password: string) => Promise<RegisterResult>;
   refreshUser: () => Promise<void>;
   logout: () => void;
@@ -60,16 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (emailOrUsername: string, password: string): Promise<LoginResult> => {
+  const login = async (
+    emailOrUsername: string,
+    password: string,
+    asAdmin: boolean = false
+  ): Promise<LoginResult> => {
     setIsLoading(true);
     try {
-      const res = await loginUser(emailOrUsername, password);
+      const res = await loginUser(emailOrUsername, password, asAdmin);
       if (res.error || !res.access) {
         setIsLoading(false);
         return {
           success: false,
           error: res.error || "Login failed",
           isVerified: res.is_verified,
+          isAdmin: res.is_admin,
           email: res.email,
         };
       }
@@ -79,14 +86,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(res.access);
 
       const userData = await getCurrentUser(res.access);
+      const isUserAdmin = Boolean(
+        userData?.is_staff || userData?.is_superuser || res.user?.is_staff || res.user?.is_superuser
+      );
+
+      // Client-side safety check: if admin login was requested but account is not admin
+      if (asAdmin && !isUserAdmin) {
+        localStorage.removeItem("vibe_token");
+        localStorage.removeItem("vibe_refresh");
+        setToken(null);
+        setUser(null);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: "Access restricted: This account does not possess administrator privileges.",
+          isAdmin: false,
+        };
+      }
+
+      // If customer login was requested but account is admin
+      if (!asAdmin && isUserAdmin) {
+        localStorage.removeItem("vibe_token");
+        localStorage.removeItem("vibe_refresh");
+        setToken(null);
+        setUser(null);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: "Administrator accounts must sign in using the Admin Login portal.",
+          isAdmin: true,
+        };
+      }
+
       if (userData) {
         setUser(userData);
       } else {
-        setUser({ id: 0, username: emailOrUsername, email: emailOrUsername.includes("@") ? emailOrUsername : "" });
+        setUser(res.user || { id: 0, username: emailOrUsername, email: emailOrUsername.includes("@") ? emailOrUsername : "" });
       }
 
       setIsLoading(false);
-      return { success: true, isVerified: true };
+      return { success: true, isVerified: true, isAdmin: isUserAdmin, user: userData || res.user };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err.message || "An unexpected error occurred" };

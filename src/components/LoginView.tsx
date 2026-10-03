@@ -27,7 +27,9 @@ export default function LoginView() {
   const { login } = useAuth();
 
   // Mode: Customer login vs Admin Portal login
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(
+    searchParams.get("admin") === "true" || searchParams.get("mode") === "admin"
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,7 +64,7 @@ export default function LoginView() {
     }
 
     // When logging in as admin, navigate directly to admin dashboard
-    if (isAdminMode || res.isAdmin) {
+    if (res.isAdmin) {
       router.push("/admin-panel");
     } else {
       router.push(redirectUrl);
