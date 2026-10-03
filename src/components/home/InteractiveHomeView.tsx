@@ -56,7 +56,7 @@ export default function InteractiveHomeView({
       caption1: "NEW SEASON DROPS 2026",
       caption2: "Heavyweight Streetwear & Hoodies Tailored For Statement Looks",
       link: "/shop",
-      image: "1920x678-1.jpg",
+      image: "add_slide_1.jpg",
       button_text: "Shop New Arrivals",
       order: 1,
       is_active: true,
@@ -66,7 +66,7 @@ export default function InteractiveHomeView({
       caption1: "PREMIUM OVERSIZED HOODIES",
       caption2: "Ultra-soft 450 GSM French Terry Cotton For Ultimate Comfort",
       link: "/shop?category=hoodiessweatshirts",
-      image: "light-bulbs--1920x570.jpg",
+      image: "banner-02.webp",
       button_text: "Explore Hoodies",
       order: 2,
       is_active: true,
@@ -76,27 +76,86 @@ export default function InteractiveHomeView({
       caption1: "URBAN MINIMALIST ESSENTIALS",
       caption2: "Redefining Everyday Luxury With Clean Fits And Earth Tones",
       link: "/shop?category=t-shirts",
-      image: "kr_slide_add_2.jpg",
+      image: "banner-04.webp",
       button_text: "Discover Collection",
       order: 3,
+      is_active: true,
+    },
+    {
+      id: 4,
+      caption1: "TACTICAL UTILITY DROP",
+      caption2: "Technical Weatherproof Outerwear & Modular Crossbody Gear",
+      link: "/shop?category=outerwear",
+      image: "banner-07.webp",
+      button_text: "Shop Outerwear",
+      order: 4,
       is_active: true,
     },
   ];
 
   const slides = initialSlides.length > 0 ? initialSlides : defaultSlides;
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
 
+  // Drag and touch swipe state
+  const [dragStartX, setDragStartX] = useState<number | null>(null);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isSwiping, setIsSwiping] = useState(false);
+
+  // Auto-swiping timer (swipes every 3.5 seconds)
   useEffect(() => {
-    if (isCarouselPaused || slides.length <= 1) return;
+    if (slides.length <= 1 || isSwiping) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5500);
+    }, 3500);
     return () => clearInterval(timer);
-  }, [isCarouselPaused, slides.length]);
+  }, [slides.length, currentSlide, isSwiping]);
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+
+  // Touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsSwiping(true);
+    setDragStartX(e.touches[0].clientX);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (dragStartX === null) return;
+    const diff = e.touches[0].clientX - dragStartX;
+    setDragOffset(diff);
+  };
+  const handleTouchEnd = () => {
+    if (dragOffset < -40) {
+      nextSlide();
+    } else if (dragOffset > 40) {
+      prevSlide();
+    }
+    setDragStartX(null);
+    setDragOffset(0);
+    setIsSwiping(false);
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsSwiping(true);
+    setDragStartX(e.clientX);
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragStartX === null) return;
+    const diff = e.clientX - dragStartX;
+    setDragOffset(diff);
+  };
+  const handleMouseUp = () => {
+    if (dragStartX !== null) {
+      if (dragOffset < -40) {
+        nextSlide();
+      } else if (dragOffset > 40) {
+        prevSlide();
+      }
+    }
+    setDragStartX(null);
+    setDragOffset(0);
+    setIsSwiping(false);
+  };
 
   // 2. Coupon Copy State
   const [copiedCoupon, setCopiedCoupon] = useState(false);
@@ -199,7 +258,6 @@ export default function InteractiveHomeView({
       item: "Vibe Signature Boxy Graphic Tee",
     },
   ];
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   // 6. Interactive FAQ Accordion State
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -292,32 +350,36 @@ export default function InteractiveHomeView({
         </div>
       </div>
 
-      {/* ─── INTERACTIVE HERO CAROUSEL ────────────────────────────────────── */}
-      <section
-        className="relative bg-gradient-to-br from-neutral-900 via-neutral-950 to-black text-white overflow-hidden py-16 md:py-24"
-        onMouseEnter={() => setIsCarouselPaused(true)}
-        onMouseLeave={() => setIsCarouselPaused(false)}
-      >
+      {/* ─── INTERACTIVE HERO CAROUSEL (AUTO-SWIPING) ───────────────────────── */}
+      <section className="relative bg-gradient-to-br from-neutral-900 via-neutral-950 to-black text-white overflow-hidden py-16 md:py-24">
         <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-10 lg:gap-14">
             {/* Left Content */}
             <div className="max-w-xl text-center md:text-left space-y-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-800/80 border border-neutral-700 text-xs font-semibold tracking-wider uppercase text-neutral-300">
+              <div
+                key={`badge-${currentSlide}`}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-800/80 border border-neutral-700 text-xs font-semibold tracking-wider uppercase text-neutral-300 transition-all duration-300 animate-in fade-in"
+              >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
                 <span>{activeSlide?.caption1 || "Exclusive Drop"}</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-                {activeSlide?.caption2?.split("&")[0] || "Wear the statement."}{" "}
-                <br className="hidden sm:inline" />
-                <span className="bg-gradient-to-r from-white via-neutral-200 to-indigo-300 bg-clip-text text-transparent">
-                  {activeSlide?.caption2?.includes("&")
-                    ? `& ${activeSlide.caption2.split("&")[1]}`
-                    : "Feel the vibe."}
-                </span>
-              </h1>
+              <div
+                key={`title-${currentSlide}`}
+                className="transition-all duration-500 animate-in fade-in slide-in-from-bottom-2"
+              >
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
+                  {activeSlide?.caption2?.split("&")[0] || "Wear the statement."}{" "}
+                  <br className="hidden sm:inline" />
+                  <span className="bg-gradient-to-r from-white via-neutral-200 to-indigo-300 bg-clip-text text-transparent">
+                    {activeSlide?.caption2?.includes("&")
+                      ? `& ${activeSlide.caption2.split("&")[1]}`
+                      : "Feel the vibe."}
+                  </span>
+                </h1>
+              </div>
 
               <p className="text-neutral-400 text-sm sm:text-base leading-relaxed">
                 Meticulously crafted streetwear, heavyweight French terry hoodies, and daily essentials engineered for those who write their own rules.
@@ -345,8 +407,8 @@ export default function InteractiveHomeView({
                   <button
                     key={idx}
                     onClick={() => setCurrentSlide(idx)}
-                    className={`h-2 transition-all duration-300 rounded-full ${
-                      currentSlide === idx ? "w-8 bg-indigo-500" : "w-2 bg-neutral-700 hover:bg-neutral-500"
+                    className={`h-2 transition-all duration-300 rounded-full overflow-hidden relative ${
+                      currentSlide === idx ? "w-10 bg-indigo-500 shadow-sm" : "w-2.5 bg-neutral-700 hover:bg-neutral-500"
                     }`}
                     aria-label={`Go to slide ${idx + 1}`}
                   />
@@ -354,48 +416,74 @@ export default function InteractiveHomeView({
                 <span className="text-[11px] font-mono text-neutral-500 ml-2">
                   0{currentSlide + 1} / 0{slides.length}
                 </span>
+                <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider bg-neutral-800/60 px-2 py-0.5 rounded-full border border-neutral-700">
+                  Auto-Swiping
+                </span>
               </div>
             </div>
 
-            {/* Right Interactive Image Presentation */}
-            <div className="relative w-full max-w-md lg:max-w-lg aspect-square rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-900/80 backdrop-blur-sm group">
-              {activeSlide?.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={formatMediaUrl(activeSlide.image)}
-                  alt={activeSlide.caption1 || "The Vibe Collection"}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-neutral-800 to-neutral-900">
-                  <span className="text-5xl font-black tracking-widest text-neutral-600 mb-2">THE VIBE</span>
-                  <p className="text-sm text-neutral-400">Premium Apparel & Streetwear</p>
-                </div>
-              )}
+            {/* Right Interactive Image Presentation - Horizontal Sliding Track */}
+            <div
+              className="relative w-full max-w-md lg:max-w-lg aspect-square rounded-3xl overflow-hidden border border-neutral-800 shadow-2xl bg-neutral-900/80 backdrop-blur-sm group select-none cursor-grab active:cursor-grabbing"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
+              {/* Sliding Strip */}
+              <div
+                className={`flex w-full h-full ${
+                  isSwiping ? "" : "transition-transform duration-700 ease-out"
+                }`}
+                style={{
+                  transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`,
+                }}
+              >
+                {slides.map((slide, idx) => (
+                  <div key={slide.id || idx} className="w-full h-full shrink-0 relative overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formatMediaUrl(slide.image)}
+                      alt={slide.caption1 || `Slide ${idx + 1}`}
+                      className="w-full h-full object-cover select-none pointer-events-none"
+                      draggable={false}
+                    />
 
-              {/* Gradient Overlay & Badge */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-6">
-                <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-extrabold mb-1">
-                  Featured Drop
-                </span>
-                <h3 className="text-lg font-bold text-white line-clamp-2">
-                  {activeSlide?.caption1 || "Signature Drop 2026"}
-                </h3>
+                    {/* Gradient Overlay & Badge */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-6">
+                      <span className="text-[10px] uppercase tracking-widest text-indigo-400 font-extrabold mb-1">
+                        Featured Drop • 0{idx + 1}
+                      </span>
+                      <h3 className="text-lg font-bold text-white line-clamp-2">
+                        {slide.caption1 || "Signature Drop 2026"}
+                      </h3>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* Carousel Next / Prev Controls */}
+              {/* Prev / Next Chevrons */}
               {slides.length > 1 && (
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 z-20">
                   <button
-                    onClick={prevSlide}
-                    className="p-2 rounded-full bg-black/60 hover:bg-black text-white backdrop-blur-md border border-neutral-700 transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      prevSlide();
+                    }}
+                    className="p-2 rounded-full bg-black/60 hover:bg-black text-white backdrop-blur-md border border-neutral-700 transition shadow-sm"
                     aria-label="Previous slide"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={nextSlide}
-                    className="p-2 rounded-full bg-black/60 hover:bg-black text-white backdrop-blur-md border border-neutral-700 transition"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      nextSlide();
+                    }}
+                    className="p-2 rounded-full bg-black/60 hover:bg-black text-white backdrop-blur-md border border-neutral-700 transition shadow-sm"
                     aria-label="Next slide"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -493,7 +581,7 @@ export default function InteractiveHomeView({
                   ) : (
                     <div className="absolute inset-0 bg-neutral-900 group-hover:bg-neutral-800 transition" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                   <div className="relative z-10">
                     <h3 className="text-lg font-bold text-white tracking-wide">
                       {cat.title}
@@ -710,7 +798,7 @@ export default function InteractiveHomeView({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, idx) => (
+            {testimonials.map((t) => (
               <div
                 key={t.id}
                 className="bg-neutral-50/80 border border-gray-200/80 rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition"
