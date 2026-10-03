@@ -25,7 +25,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (emailOrUsername: string, password: string, asAdmin?: boolean) => Promise<LoginResult>;
+  login: (emailOrUsername: string, password: string) => Promise<LoginResult>;
   register: (username: string, email: string, password: string) => Promise<RegisterResult>;
   refreshUser: () => Promise<void>;
   logout: () => void;
@@ -64,12 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (
     emailOrUsername: string,
-    password: string,
-    asAdmin: boolean = false
+    password: string
   ): Promise<LoginResult> => {
     setIsLoading(true);
     try {
-      const res = await loginUser(emailOrUsername, password, asAdmin);
+      const res = await loginUser(emailOrUsername, password);
       if (res.error || !res.access) {
         setIsLoading(false);
         return {
@@ -87,41 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await getCurrentUser(res.access);
       const isUserAdmin = Boolean(
-        userData?.is_staff || userData?.is_superuser || res.user?.is_staff || res.user?.is_superuser
+        userData?.is_staff || userData?.is_superuser || res.user?.is_staff || res.user?.is_superuser || res.is_admin
       );
-
-      // Client-side safety check: if admin login was requested but account is not admin
-      if (asAdmin && !isUserAdmin) {
-        localStorage.removeItem("vibe_token");
-        localStorage.removeItem("vibe_refresh");
-        setToken(null);
-        setUser(null);
-        setIsLoading(false);
-        return {
-          success: false,
-          error: "Access restricted: This account does not possess administrator privileges.",
-          isAdmin: false,
-        };
-      }
-
-      // If customer login was requested but account is admin
-      if (!asAdmin && isUserAdmin) {
-        localStorage.removeItem("vibe_token");
-        localStorage.removeItem("vibe_refresh");
-        setToken(null);
-        setUser(null);
-        setIsLoading(false);
-        return {
-          success: false,
-          error: "Administrator accounts must sign in using the Admin Login portal.",
-          isAdmin: true,
-        };
-      }
 
       if (userData) {
         setUser(userData);
       } else {
-        setUser(res.user || { id: 0, username: emailOrUsername, email: emailOrUsername.includes("@") ? emailOrUsername : "" });
+        setUser(res.user || {
+          id: 0,
+          username: emailOrUsername,
+          email: emailOrUsername.includes("@") ? emailOrUsername : "",
+          is_staff: isUserAdmin,
+          is_superuser: isUserAdmin,
+        });
       }
 
       setIsLoading(false);

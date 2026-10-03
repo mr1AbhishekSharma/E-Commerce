@@ -554,10 +554,10 @@ export default function AdminDashboard() {
           </p>
           <div className="flex flex-col gap-3">
             <Link
-              href="/login?mode=admin"
+              href="/login"
               className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30"
             >
-              Sign In to Admin Portal
+              Sign In with Admin Account
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

@@ -151,9 +151,11 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
-            <Link href="/admin-panel" className="hidden sm:inline text-gray-400 hover:text-white transition font-medium">
-              Admin
-            </Link>
+            {Boolean(user?.is_staff || user?.is_superuser) && (
+              <Link href="/admin-panel" className="hidden sm:inline text-indigo-400 hover:text-white transition font-semibold">
+                Admin Panel
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -304,14 +306,16 @@ export default function Navbar() {
                     >
                       Request Refund
                     </Link>
-                    <Link
-                      href="/admin-panel"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-indigo-600" />
-                      Admin Panel
-                    </Link>
+                    {Boolean(user?.is_staff || user?.is_superuser) && (
+                      <Link
+                        href="/admin-panel"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-indigo-600 font-semibold hover:bg-indigo-50"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-indigo-600" />
+                        Admin Panel
+                      </Link>
+                    )}
                     <button
                       onClick={() => {
                         logout();

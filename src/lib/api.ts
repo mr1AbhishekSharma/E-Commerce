@@ -103,11 +103,17 @@ export async function loginUser(
         refresh: "",
         error: data.detail || (Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : (data.email ? data.email[0] : "Invalid credentials")),
         is_verified: data.is_verified !== false,
-        is_admin: data.is_admin,
+        is_admin: Boolean(data.is_admin),
         email: data.email || (emailOrUsername.includes("@") ? emailOrUsername : ""),
       };
     }
-    return data;
+    const isAdmin = Boolean(
+      data.is_admin || data.user?.is_staff || data.user?.is_superuser
+    );
+    return {
+      ...data,
+      is_admin: isAdmin,
+    };
   } catch (error) {
     return { access: "", refresh: "", error: "Failed to connect to authentication service" };
   }
