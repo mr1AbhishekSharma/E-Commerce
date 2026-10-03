@@ -416,9 +416,6 @@ export default function InteractiveHomeView({
                 <span className="text-[11px] font-mono text-neutral-500 ml-2">
                   0{currentSlide + 1} / 0{slides.length}
                 </span>
-                <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider bg-neutral-800/60 px-2 py-0.5 rounded-full border border-neutral-700">
-                  Auto-Swiping
-                </span>
               </div>
             </div>
 
