@@ -10,7 +10,7 @@ import { Lock, User as UserIcon, Mail, AlertCircle, ArrowRight, CheckCircle2, Re
 export default function RegisterView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/shop";
+  const redirectUrl = searchParams.get("redirect") || "/";
   const { register } = useAuth();
 
   const [username, setUsername] = useState("");
@@ -261,7 +261,7 @@ export default function RegisterView() {
       <div className="mt-8 text-center text-xs text-gray-500 border-t border-gray-100 pt-6">
         Already have an account?{" "}
         <Link
-          href={`/login${redirectUrl !== "/shop" ? `?redirect=${redirectUrl}` : ""}`}
+          href={`/login${redirectUrl !== "/" ? `?redirect=${redirectUrl}` : ""}`}
           className="font-bold text-black hover:underline"
         >
           Sign in

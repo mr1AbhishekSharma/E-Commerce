@@ -10,7 +10,7 @@ import { Lock, User as UserIcon, AlertCircle, ArrowRight, CheckCircle2, AlertTri
 export default function LoginView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/shop";
+  const redirectUrl = searchParams.get("redirect") || "/";
   const verifiedParam = searchParams.get("verified") === "true";
   const { login } = useAuth();
 
@@ -196,7 +196,7 @@ export default function LoginView() {
       <div className="mt-8 text-center text-xs text-gray-500 border-t border-gray-100 pt-6">
         Don't have an account?{" "}
         <Link
-          href={`/register${redirectUrl !== "/shop" ? `?redirect=${redirectUrl}` : ""}`}
+          href={`/register${redirectUrl !== "/" ? `?redirect=${redirectUrl}` : ""}`}
           className="font-bold text-black hover:underline"
         >
           Create one now
