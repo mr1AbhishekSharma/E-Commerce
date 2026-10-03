@@ -5,13 +5,14 @@ import { Product } from "@/types";
 import { formatMediaUrl } from "@/lib/api";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useWishlist } from "@/context/WishlistContext";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, Eye } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
+  onQuickView?: (product: Product) => void;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onQuickView }: ProductCardProps) {
   const imageUrl = formatMediaUrl(product.image);
   const { formatPrice } = useCurrency();
   const { isInWishlist, toggleWishlist } = useWishlist();
@@ -69,13 +70,36 @@ export default function ProductCard({ product }: ProductCardProps) {
         />
 
         {/* Hover Quick Action */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-          <Link
-            href={`/product/${product.slug}`}
-            className="w-full bg-white text-black text-center py-2.5 rounded-lg text-sm font-semibold shadow hover:bg-black hover:text-white transition"
-          >
-            View Details
-          </Link>
+        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 gap-2">
+          {onQuickView ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onQuickView(product);
+                }}
+                className="flex-1 bg-white hover:bg-neutral-100 text-black text-center py-2 px-2 rounded-lg text-xs font-bold shadow transition flex items-center justify-center gap-1.5"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Quick View</span>
+              </button>
+              <Link
+                href={`/product/${product.slug}`}
+                className="bg-black hover:bg-neutral-800 text-white text-center py-2 px-3 rounded-lg text-xs font-bold shadow transition"
+              >
+                Details
+              </Link>
+            </>
+          ) : (
+            <Link
+              href={`/product/${product.slug}`}
+              className="w-full bg-white text-black text-center py-2.5 rounded-lg text-sm font-semibold shadow hover:bg-black hover:text-white transition"
+            >
+              View Details
+            </Link>
+          )}
         </div>
       </div>
 

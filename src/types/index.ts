@@ -4,6 +4,8 @@ export interface Slide {
   caption2: string;
   link: string;
   image: string;
+  button_text?: string;
+  order?: number;
   is_active: boolean;
 }
 
@@ -31,6 +33,8 @@ export interface Product {
   description_long: string;
   image: string;
   is_active: boolean;
+  is_bestseller?: boolean;
+  is_featured?: boolean;
   average_rating?: number;
   review_count?: number;
 }
