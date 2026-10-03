@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Heart } from "lucide-react";
 import { YoutubeIcon, InstagramIcon, TwitterIcon } from "@/components/SocialIcons";
 
 export default function Footer() {
@@ -130,11 +129,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-neutral-800 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
-          <p>© {new Date().getFullYear()} The Vibe. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Built with Django DRF & Next.js <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 inline" />
-          </p>
+        <div className="border-t border-neutral-800 pt-8 flex items-center justify-center text-xs text-neutral-500">
+          <p className="text-center">© {new Date().getFullYear()} The Vibe. All rights reserved.</p>
         </div>
       </div>
     </footer>
