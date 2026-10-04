@@ -37,6 +37,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useAuth } from "@/context/AuthContext";
 import { formatMediaUrl } from "@/lib/api";
 import { Product, Category, CartOrder, Review } from "@/types";
+import VibeLoader from "@/components/VibeLoader";
 
 // Tab types
 export type AdminTab =
@@ -532,8 +533,7 @@ export default function AdminDashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-semibold text-neutral-400">Verifying administrator authorization...</p>
+        <VibeLoader size="md" theme="dark" label="Verifying administrator authorization..." />
       </div>
     );
   }

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import VibeLoader from "@/components/VibeLoader";
 import {
   updateUserProfile,
   getUserAddresses,
@@ -176,7 +177,7 @@ export default function ProfileView() {
   if (authLoading || (!user && token)) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+        <VibeLoader size="md" />
       </div>
     );
   }

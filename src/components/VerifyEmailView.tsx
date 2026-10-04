@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { verifyEmail, resendVerification } from "@/lib/api";
 import { CheckCircle2, XCircle, Mail, Loader2, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
+import VibeLoader from "@/components/VibeLoader";
 
 export default function VerifyEmailView() {
   const searchParams = useSearchParams();
@@ -100,8 +101,8 @@ export default function VerifyEmailView() {
       {/* Loading state */}
       {state === "loading" && (
         <div className="text-center py-8 space-y-4">
-          <div className="w-16 h-16 mx-auto bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center animate-spin">
-            <Loader2 className="w-8 h-8" />
+          <div className="py-2 flex justify-center">
+            <VibeLoader size="sm" />
           </div>
           <h1 className="text-xl font-bold text-gray-900">Verifying Your Email</h1>
           <p className="text-xs text-gray-500 max-w-xs mx-auto">

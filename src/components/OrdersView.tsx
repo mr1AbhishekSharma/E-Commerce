@@ -7,6 +7,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { getUserOrders, formatMediaUrl } from "@/lib/api";
 import { CartOrder } from "@/types";
 import { Package, Truck, CheckCircle2, RotateCcw, ArrowRight, Clock } from "lucide-react";
+import VibeLoader from "@/components/VibeLoader";
 
 export default function OrdersView() {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -39,9 +40,8 @@ export default function OrdersView() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-20 text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-sm text-gray-500">Loading your orders...</p>
+      <div className="max-w-5xl mx-auto px-4 py-24 text-center flex flex-col items-center justify-center">
+        <VibeLoader size="md" label="Loading your orders..." />
       </div>
     );
   }
