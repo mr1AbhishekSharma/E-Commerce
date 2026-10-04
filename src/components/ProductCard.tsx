@@ -19,29 +19,36 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
   const isFav = isInWishlist(product.slug);
 
   return (
-    <div className="group relative bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col justify-between">
+    <div className="group relative bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-xl hover:border-gray-200 transition-all duration-300 flex flex-col justify-between cursor-pointer">
+      {/* Primary Stretched Link to Product Page (makes entire card clickable) */}
+      <Link
+        href={`/product/${product.slug}`}
+        className="absolute inset-0 z-10"
+        aria-label={`View details for ${product.title}`}
+      />
+
       {/* Product Image & Badges */}
       <div className="relative aspect-square w-full bg-gray-50 overflow-hidden">
         {/* Badges */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+        <div className="absolute top-3 left-3 z-20 pointer-events-none flex flex-col gap-1">
           {product.label === "S" && (
-            <span className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
               Sale
             </span>
           )}
           {product.label === "N" && (
-            <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
               New
             </span>
           )}
           {product.label === "P" && (
-            <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="bg-amber-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
               Promo
             </span>
           )}
         </div>
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button (Higher z-index to handle clicks independently) */}
         <button
           type="button"
           onClick={(e) => {
@@ -49,7 +56,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             e.stopPropagation();
             toggleWishlist(product);
           }}
-          className={`absolute top-3 right-3 z-20 p-2 rounded-full transition-all duration-200 shadow-xs ${
+          className={`absolute top-3 right-3 z-20 p-2 rounded-full transition-all duration-200 shadow-xs cursor-pointer ${
             isFav
               ? "bg-red-50 text-red-500 hover:bg-red-100"
               : "bg-white/80 backdrop-blur-xs text-gray-500 hover:text-red-500 hover:bg-white"
@@ -70,7 +77,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
         />
 
         {/* Hover Quick Action */}
-        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 gap-2">
+        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 gap-2 pointer-events-none">
           {onQuickView ? (
             <>
               <button
@@ -80,25 +87,19 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
                   e.stopPropagation();
                   onQuickView(product);
                 }}
-                className="flex-1 bg-white hover:bg-neutral-100 text-black text-center py-2 px-2 rounded-lg text-xs font-bold shadow transition flex items-center justify-center gap-1.5"
+                className="flex-1 bg-white hover:bg-neutral-100 text-black text-center py-2 px-2 rounded-lg text-xs font-bold shadow transition flex items-center justify-center gap-1.5 z-20 pointer-events-auto cursor-pointer"
               >
                 <Eye className="w-3.5 h-3.5" />
                 <span>Quick View</span>
               </button>
-              <Link
-                href={`/product/${product.slug}`}
-                className="bg-black hover:bg-neutral-800 text-white text-center py-2 px-3 rounded-lg text-xs font-bold shadow transition"
-              >
+              <span className="bg-black text-white text-center py-2 px-3 rounded-lg text-xs font-bold shadow transition">
                 Details
-              </Link>
+              </span>
             </>
           ) : (
-            <Link
-              href={`/product/${product.slug}`}
-              className="w-full bg-white text-black text-center py-2.5 rounded-lg text-sm font-semibold shadow hover:bg-black hover:text-white transition"
-            >
+            <span className="w-full bg-white text-black text-center py-2.5 rounded-lg text-sm font-semibold shadow transition">
               View Details
-            </Link>
+            </span>
           )}
         </div>
       </div>
@@ -111,8 +112,8 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
               {product.category_title}
             </p>
           )}
-          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-black line-clamp-1">
-            <Link href={`/product/${product.slug}`}>{product.title}</Link>
+          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors line-clamp-1">
+            {product.title}
           </h3>
           <div className="flex items-center gap-1 mt-1 text-xs">
             <div className="flex items-center text-amber-400">
